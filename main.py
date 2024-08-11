@@ -37,6 +37,7 @@ while True:
 
 
     pulse = time_pulse_us(echo,1,30000)
+
     active.value(0)
 
     print('Pulse usecs ',pulse)
@@ -48,10 +49,11 @@ while True:
     set_led(led1, counter & 2)
     set_led(led2, counter & 4)
     set_led(led3, counter & 8)
-    sleep_us(10)
+
+    sleep_us(1000000)
+
     set_led(led0, 0)
     set_led(led1, 0)
     set_led(led2, 0)
     set_led(led3, 0)
 
-    sleep_us(10000)
