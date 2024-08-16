@@ -100,16 +100,14 @@ def create_bthome_frame(pulse, depth):
     bthome.extend(struct.pack("<B", 0x40))
 
     # Pulse width
-    pulse_as_hex = hex(pulse)
     bthome.extend(struct.pack("<B", 0x54)) # raw
-    bthome.extend(struct.pack("<B", len(pulse_as_hex)))
-    bthome.extend(bytes(pulse_as_hex, 'ascii'))
+    bthome.extend(struct.pack("<B", 2))
+    bthome.extend(struct.pack(">H", pulse))
 
     # Calculated depth
-    depth_as_hex = hex(depth)
     bthome.extend(struct.pack("<B", 0x54)) # raw
-    bthome.extend(struct.pack("<B", len(depth_as_hex)))
-    bthome.extend(bytes(depth_as_hex, 'ascii'))
+    bthome.extend(struct.pack("<B", 2))
+    bthome.extend(struct.pack(">H", depth))
 
     print("bthome: %s/%d" % (binascii.hexlify(bthome), len(bthome)))
 
