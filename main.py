@@ -1,54 +1,26 @@
-import sys
+import asyncio
+import bluetooth
+import struct
+import binascii
 
-# ruff: noqa: E402
-sys.path.append("")
-
+from micropython import const
 from machine import Pin,time_pulse_us,Timer
 from time import sleep_us
-from micropython import const
 
-import asyncio
-import aioble
-import bluetooth
+# ADV_TYPES are defined in assigned_numbers/core/ad_types.yaml
+ADV_TYPE_FLAGS = const(0x01)
+ADV_TYPE_SNAME = const(0x08) # shortened local name
+ADV_TYPE_CNAME = const(0x09) # complete local name
+ADV_TYPE_SDATA = const(0x16) # service data
 
-import random
-import struct
+# BTHome UUID (via Allterco Robotics ltd in member_uuids.yaml)
+BTHOME_UUID = bluetooth.UUID(0xFCD2)
 
-# org.bluetooth.service.environmental_sensing
-_ENV_SENSE_UUID = bluetooth.UUID(0x181A)
-# org.bluetooth.characteristic.temperature
-_ENV_SENSE_TEMP_UUID = bluetooth.UUID(0x2A6E)
-# org.bluetooth.characteristic.gap.appearance.xml
-_ADV_APPEARANCE_GENERIC_THERMOMETER = const(768)
+# How frequently to poll data
+POLL_INTERVAL_MS = 1_000
 
-# How frequently to send advertising beacons.
-_ADV_INTERVAL_MS = 250_000
-
-# Register GATT server.
-depth_service = aioble.Service(_ENV_SENSE_UUID)
-
-# org.bluetooth.characteristic.measurement_interval
-_ENV_SENSE_MEASURE_INTERVAL = bluetooth.UUID(0x2A21)
-pulse_val = aioble.Characteristic(
-    depth_service, _ENV_SENSE_MEASURE_INTERVAL, read=True, notify=True
-)
-# Encode and update pulse (uint16, usec measured).
-def update_pulse_val(pulse_in_us):
-    val = struct.pack("<H", pulse_in_us)
-    pulse_val.write(val, send_update=True)
-
-_ENV_SENSE_LENGTH_METERS = bluetooth.UUID(0x2701)
-dist_val = aioble.Characteristic(
-    depth_service, _ENV_SENSE_LENGTH_METERS, read=True, notify=True
-)
-
-def update_distance(dist_in_cm):
-    val = struct.pack("<f", dist_in_cm)
-    dist_val.write(val, send_update=True)
-
-# Register the service
-aioble.register_services(depth_service)
-
+# How frequently to send BT beacons
+BT_BEACON_INTERVAL_MS = 5_000
 
 # 4 bit display in LEDs
 led0 = Pin(14, Pin.OUT)
@@ -87,40 +59,88 @@ def fetch_pulse_measurement():
     set_led(led1, 0)
     return pulse
 
+def create_adv_frame(adv_type, adv_data):
+    """
+    Return the bytes for a single advertising frame in the PDU
+    """
+    l = len(adv_data)
+    print(f"type: {adv_type}, data: {adv_data}/{l}")
+    return struct.pack("BB", l + 1, adv_type) + adv_data
+
+
+def create_bthome_frame(pulse, depth):
+    """
+    Create a BTHome frame. This will be the data part of the
+    advertising packet identifying the BTHome device and supplying the
+    measurements.
+
+    We don't support connections, everything should be broadcast in
+    the advert.
+    """
+    payload = bytearray()
+
+    # Flags value (fixed for BTHome)
+    # bit 1/0x2 - LE General Discoverable Mode
+    # bit 2/0x4 - BR/EDR Not Supported
+    payload += create_adv_frame(ADV_TYPE_FLAGS, bytearray([0x6]))
+
+    # We can include common headers (name etc)
+    payload += create_adv_frame(ADV_TYPE_CNAME, b'depth')
+
+    # BTHome header
+    bthome = bytearray(BTHOME_UUID)
+    # not encrypted, regular updates, version 2
+    bthome.extend(struct.pack("<B", 0x40))
+
+    # Pulse width
+    bthome.extend(struct.pack("<B", 0x53)) # raw
+    bthome.extend(struct.pack("<B", 0x2))  # 2 bytes
+    bthome.extend(struct.pack("<H", pulse))
+
+    # Calculated depth
+    bthome.extend(struct.pack("<B", 0x53)) # raw
+    bthome.extend(struct.pack("<B", 0x2))  # 2 bytes
+    bthome.extend(struct.pack("<H", depth))
+
+    print("bthome: %s" % (binascii.hexlify(bthome)))
+
+    # encapsulated in a SERVICE_DATA packet
+    payload += create_adv_frame(ADV_TYPE_SDATA, bthome)
+
+    print("payload: %s" % (binascii.hexlify(payload)))
+    return payload
+
+
 # This would be periodically polling a hardware sensor.
-async def sensor_task():
+async def sensor_task(bt):
 
     while True:
         pulse = fetch_pulse_measurement()
-        update_pulse_val(pulse)
-
         depth = sofs * pulse / 20000 #Depth cms
         print('Surface at', depth, 'cms')
-        update_distance(depth)
 
-        await asyncio.sleep_ms(1000)
+        payload = create_bthome_frame(pulse, int(depth))
+
+        # I think the underlying library is meant to handle the 16 bit
+        # PDU header
+        bt.gap_advertise(BT_BEACON_INTERVAL_MS,
+                         adv_data = payload,
+                         connectable = False)
+
+        await asyncio.sleep_ms(POLL_INTERVAL_MS)
 
 
-# Serially wait for connections. Don't advertise while a central is
-# connected.
-async def peripheral_task():
-    while True:
-        async with await aioble.advertise(
-            _ADV_INTERVAL_MS,
-            name="mpy-depth",
-            services=[_ENV_SENSE_UUID],
-            appearance=_ADV_APPEARANCE_GENERIC_THERMOMETER,
-        ) as connection:
-            set_led(led0, 1)
-            print("Connection from", connection.device)
-            await connection.disconnected(timeout_ms=None)
-            set_led(led0, 0)
-
-# Run both tasks.
+# Run tasks.
 async def main():
-    t1 = asyncio.create_task(sensor_task())
-    t2 = asyncio.create_task(peripheral_task())
-    await asyncio.gather(t1, t2)
+
+    bt = bluetooth.BLE()
+    bt.active(True)
+
+    bt.config(addr_mode = 0x0,
+              gap_name = "depth")
+
+    t1 = asyncio.create_task(sensor_task(bt))
+    await asyncio.gather(t1)
 
 
 asyncio.run(main())
