@@ -1,0 +1,60 @@
+* Introduction
+
+This is a piece of Pico-W Micropython to build a depth sensor which in
+theory should broadcast over Bluetooth Low Energy (BLE) Advertising
+Packets. The device should not be pairable.
+
+* Hardware
+
+See the pin definitions at the top. I'm using a HCS-04 ultrasound
+depth sensor which has separate trigger and echo pins. You wave the
+trigger pin about, see how long it takes for the pulse to come back,
+do some basic maths and you have a number.
+
+The LEDs are really just useful for debugging on my Pico breakout
+board. It shouldn't matter if they are not connected.
+
+* Bluetooth
+
+In theory this is broadcasting [[https://bthome.io/][BTHome]] packets. I chose this as it
+seemed simpler than using the BLE advertising services directly. As
+neither has an attribute which maps nicely to the raw pulse counter or
+a depth sensor I just report two raw 16bit integers.
+
+* Using
+
+Plug your Pico-W into your computer and copy main.py using a tool like
+ampy:
+
+#+name: copy to PicoW
+#+begin_example
+$ ampy -p /dev/ttyACM0 put main.py
+#+end_example
+
+you can then connect to the device, issue a *Ctrl-D* and the Pico will
+soft reboot and start running the code:
+
+#+name: connect to PicoW
+#+begin_example
+$ tio /dev/ttyACM0
+[19:52:41.722] tio v2.5
+[19:52:41.722] Press ctrl-t q to quit
+[19:52:41.723] Connected
+>>> 
+MPY: soft reboot
+Pulse usecs: 974
+Surface at 16.7041 cms
+type: 1, data: bytearray(b'\x06')/1
+type: 9, data: b'depth'/5
+bthome: b'd2fc405302ce0353021000'/11
+type: 22, data: bytearray(b'\xd2\xfc@S\x02\xce\x03S\x02\x10\x00')/11
+payload: b'020106060964657074680c16d2fc405302ce0353021000'/23
+Pulse usecs: 974
+Surface at 16.7041 cms
+type: 1, data: bytearray(b'\x06')/1
+type: 9, data: b'depth'/5
+bthome: b'd2fc405302ce0353021000'/11
+type: 22, data: bytearray(b'\xd2\xfc@S\x02\xce\x03S\x02\x10\x00')/11
+payload: b'020106060964657074680c16d2fc405302ce0353021000'/23
+#+end_example
+
