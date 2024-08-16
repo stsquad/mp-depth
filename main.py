@@ -102,12 +102,12 @@ def create_bthome_frame(pulse, depth):
     bthome.extend(struct.pack("<B", 0x2))  # 2 bytes
     bthome.extend(struct.pack("<H", depth))
 
-    print("bthome: %s" % (binascii.hexlify(bthome)))
+    print("bthome: %s/%d" % (binascii.hexlify(bthome), len(bthome)))
 
     # encapsulated in a SERVICE_DATA packet
     payload += create_adv_frame(ADV_TYPE_SDATA, bthome)
 
-    print("payload: %s" % (binascii.hexlify(payload)))
+    print("payload: %s/%d" % (binascii.hexlify(payload), len(payload)))
     return payload
 
 
