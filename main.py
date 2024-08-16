@@ -1,3 +1,10 @@
+#
+# mp-depth - a BLE depth sensor written in micropython
+#
+# Copyright (C) 2024 Alex Bennée
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 import asyncio
 import bluetooth
 import struct
