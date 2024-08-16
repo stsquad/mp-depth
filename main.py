@@ -24,10 +24,10 @@ ADV_TYPE_SDATA = const(0x16) # service data
 BTHOME_UUID = bluetooth.UUID(0xFCD2)
 
 # How frequently to poll data
-POLL_INTERVAL_MS = 1_000
+POLL_INTERVAL_MS = 10_000
 
 # How frequently to send BT beacons
-BT_BEACON_INTERVAL_MS = 5_000
+BT_BEACON_INTERVAL_MS = 20_000
 
 # 4 bit display in LEDs
 led0 = Pin(14, Pin.OUT)
