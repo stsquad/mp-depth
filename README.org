@@ -14,6 +14,10 @@ do some basic maths and you have a number.
 The LEDs are really just useful for debugging on my Pico breakout
 board. It shouldn't matter if they are not connected.
 
+The button is a hacky way to boost the scanning rate for some cycles.
+It is imperfect as you still need to wait for the existing sleep to
+wake up.
+
 * Bluetooth
 
 In theory this is broadcasting [[https://bthome.io/][BTHome]] packets. I chose this as it
