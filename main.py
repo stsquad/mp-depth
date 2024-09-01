@@ -23,6 +23,11 @@ ADV_TYPE_SDATA = const(0x16) # service data
 # BTHome UUID (via Allterco Robotics ltd in member_uuids.yaml)
 BTHOME_UUID = bluetooth.UUID(0xFCD2)
 
+BTHOME_CB_OBJ = const(0x09)
+BTHOME_CW_OBJ = const(0x3D)
+BTHOME_DIST_MM = const(0x40)
+BTHOME_DIST_DM = const(0x41)
+
 # Idle and active polling intervals
 IDLE_INTERVAL_MS = 30_000
 ACTIVE_INTERVAL_MS = 5_000
@@ -107,15 +112,18 @@ def create_bthome_frame(pulse, depth):
     # not encrypted, regular updates, version 2
     bthome.extend(struct.pack("<B", 0x40))
 
-    # Pulse width
-    bthome.extend(struct.pack("<B", 0x54)) # raw
-    bthome.extend(struct.pack("<B", 2))
+    # Pulse width (Count, 2bytes)
+    bthome.extend(struct.pack("<B", BTHOME_CW_OBJ))
     bthome.extend(struct.pack(">H", pulse))
 
-    # Calculated depth
-    bthome.extend(struct.pack("<B", 0x54)) # raw
-    bthome.extend(struct.pack("<B", 2))
-    bthome.extend(struct.pack(">H", depth))
+    # Calculated depth (mms)
+    if depth > 65535:
+        depth_deci_meter = depth / 100
+        bthome.extend(struct.pack("<B", BTHOME_DIST_DM))
+        bthome.extend(struct.pack(">H", int(depth_deci_meter)))
+    else:
+        bthome.extend(struct.pack("<B", BTHOME_DIST_MM))
+        bthome.extend(struct.pack(">H", int(depth)))
 
     print("bthome: %s/%d" % (binascii.hexlify(bthome), len(bthome)))
 
@@ -127,10 +135,11 @@ def create_bthome_frame(pulse, depth):
 
 def read_and_send_packet(bt):
     pulse = fetch_pulse_measurement()
-    depth = sofs * pulse / 20000 #Depth cms
-    print('Surface at', depth, 'cms')
+    # m/s * s
+    depth = sofs * pulse / 2000 #Depth mms
+    print('Surface at', depth, 'mms')
 
-    payload = create_bthome_frame(pulse, int(depth))
+    payload = create_bthome_frame(pulse, depth)
 
     # check if we need to slow down
     global active_count
@@ -172,7 +181,7 @@ def handle_button_press(bt):
     global active_count
 
     current_interval = ACTIVE_INTERVAL_MS
-    active_count = min(active_count + 1, 15)
+    active_count = min(active_count + 2, 15)
 
     set_led(led_active, 1)
 

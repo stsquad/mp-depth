@@ -65,27 +65,6 @@ payload: b'020106060964657074680c16d2fc405302ce0353021000'/23
 * Interfacing with Home Assistant
 
 [[https://www.home-assistant.io/][Home Assistant]] already has built in support for Bluetooth and has native
-support BTHome packets. However as we aren't using any known fields
-you need to convert the raw data into values in home assistant.
+support BTHome packets. We send a raw count which is actually usecs of
+the pulse width and then we send a distance (mm or 0.1 m).
 
-The first value is the pulse length (in case you want to calculate
-depth in HA, taking into account pressure and temp from somewhere
-else). The second value is the calculated distance measurement.
-
-#+name: Example sensor template in HA
-#+begin_example
-# Convert RAW BTHome fields
-- sensor:
-  - unique_id: mpdepth_pulse
-    name: Pulse delay
-    unit_of_measurement: "uS"
-    state: >
-        {{ states('sensor.depth_3bbd_raw_1')|int(base=16) }}
-
-- sensor:
-  - unique_id: mpdepth_cm
-    name: Depth or Range
-    unit_of_measurement: "cm"
-    state: >
-        {{ states('sensor.depth_3bbd_raw_2')|int(base=16) }}
-#+end_example
