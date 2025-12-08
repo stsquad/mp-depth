@@ -46,20 +46,32 @@ $ tio /dev/ttyACM0
 [19:52:41.723] Connected
 >>> 
 MPY: soft reboot
-Pulse usecs: 974
-Surface at 16.7041 cms
+Pulse usecs: 1089
+Surface at 186.7635 mms
 type: 1, data: bytearray(b'\x06')/1
 type: 9, data: b'depth'/5
-bthome: b'd2fc405302ce0353021000'/11
-type: 22, data: bytearray(b'\xd2\xfc@S\x02\xce\x03S\x02\x10\x00')/11
-payload: b'020106060964657074680c16d2fc405302ce0353021000'/23
-Pulse usecs: 974
-Surface at 16.7041 cms
+bthome: b'd2fc405b4104000040ba00'/11
+type: 22, data: bytearray(b'\xd2\xfc@[A\x04\x00\x00@\xba\x00')/11
+payload: b'020106060964657074680c16d2fc405b4104000040ba00'/23
+9 left at 5000
+sleeping for 5000
+Pulse usecs: 1145
+Surface at 196.3675 mms
 type: 1, data: bytearray(b'\x06')/1
 type: 9, data: b'depth'/5
-bthome: b'd2fc405302ce0353021000'/11
-type: 22, data: bytearray(b'\xd2\xfc@S\x02\xce\x03S\x02\x10\x00')/11
-payload: b'020106060964657074680c16d2fc405302ce0353021000'/23
+bthome: b'd2fc405b7904000040c400'/11
+type: 22, data: bytearray(b'\xd2\xfc@[y\x04\x00\x00@\xc4\x00')/11
+payload: b'020106060964657074680c16d2fc405b7904000040c400'/23
+10 left at 5000
+sleep is now 5000
+Pulse usecs: 1089
+Surface at 186.7635 mms
+type: 1, data: bytearray(b'\x06')/1
+type: 9, data: b'depth'/5
+bthome: b'd2fc405b4104000040ba00'/11
+type: 22, data: bytearray(b'\xd2\xfc@[A\x04\x00\x00@\xba\x00')/11
+payload: b'020106060964657074680c16d2fc405b4104000040ba00'/23
+9 left at 5000
 #+end_example
 
 * Interfacing with Home Assistant

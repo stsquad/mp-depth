@@ -25,6 +25,7 @@ BTHOME_UUID = bluetooth.UUID(0xFCD2)
 
 BTHOME_CB_OBJ = const(0x09)
 BTHOME_CW_OBJ = const(0x3D)
+BTHOME_CL_OBJ = const(0x5B)
 BTHOME_DIST_MM = const(0x40)
 BTHOME_DIST_DM = const(0x41)
 
@@ -112,18 +113,19 @@ def create_bthome_frame(pulse, depth):
     # not encrypted, regular updates, version 2
     bthome.extend(struct.pack("<B", 0x40))
 
-    # Pulse width (Count, 2bytes)
-    bthome.extend(struct.pack("<B", BTHOME_CW_OBJ))
-    bthome.extend(struct.pack(">H", pulse))
+    # Pulse width (Count, 4bytes signed)
+    bthome.extend(struct.pack("<B", BTHOME_CL_OBJ))
+    bthome.extend(struct.pack("<i", pulse))
 
     # Calculated depth (mms)
     if depth > 65535:
+        # factor is 0.1 hence measures to decimeter
         depth_deci_meter = depth / 100
         bthome.extend(struct.pack("<B", BTHOME_DIST_DM))
-        bthome.extend(struct.pack(">H", int(depth_deci_meter)))
+        bthome.extend(struct.pack("<H", int(depth_deci_meter)))
     else:
         bthome.extend(struct.pack("<B", BTHOME_DIST_MM))
-        bthome.extend(struct.pack(">H", int(depth)))
+        bthome.extend(struct.pack("<H", int(depth)))
 
     print("bthome: %s/%d" % (binascii.hexlify(bthome), len(bthome)))
 
